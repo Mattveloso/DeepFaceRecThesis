@@ -2,6 +2,34 @@
 #Based on DeepFace and FaceNet implementations
 #Special Thanks to Deeplearning.ai@Coursera
 
+#MIT License
+
+#Copyright (c) 2018 Deeplearning.ai, 2016 David Sandberg
+
+#Permission is hereby granted, free of charge, to any person obtaining a copy
+#of this software and associated documentation files (the "Software"), to deal
+#in the Software without restriction, including without limitation the rights
+#to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+#copies of the Software, and to permit persons to whom the Software is
+#furnished to do so, subject to the following conditions:
+
+#The above copyright notice and this permission notice shall be included in all
+#copies or substantial portions of the Software.
+
+#THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+#IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+#FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+#AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+#LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+#OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+#SOFTWARE.
+
+#Disclaimer: This code may contain code that could be used to complete the Coursera
+#courses this code is partly based on (as has the original facenet and OpenFace-Keras implementations).
+#The code was altered to contain as least information that could be useful as possible,
+#however no student shall use this code or parts of it to complete their assignements
+#in the coursera platform, since plagiarism goes directly against the coursera honour code.
+
 import numpy as np
 from numpy import genfromtxt
 import tensorflow as tf
@@ -39,7 +67,7 @@ np.set_printoptions(threshold=sys.maxsize)
 
 def triplet_loss(y_true, y_pred, alpha = 0.2):
     """
-    Implementation of the triplet loss as defined by Ng.
+    Implementation of the triplet loss as defined by Facenet.
 
     Arguments:
     y_true -- true labels, required when you define a loss in Keras, you don't need it in this function.
@@ -54,18 +82,15 @@ def triplet_loss(y_true, y_pred, alpha = 0.2):
 
     anchor, positive, negative = y_pred[0], y_pred[1], y_pred[2]
 
-    # Computes the (encoding) distance between the anchor, the positive and the negative
     pos_dist = tf.reduce_sum(tf.square(tf.subtract(anchor,positive)),axis=-1)
     neg_dist = tf.reduce_sum(tf.square(tf.subtract(anchor,negative)),axis=-1)
-    # Subtracts the two previous distances and add alpha.
     basic_loss = tf.add(tf.subtract(pos_dist,neg_dist),alpha)
-    # Takes the maximum of basic_loss and 0.0. Sum over the training examples.
     loss = tf.reduce_sum(tf.maximum(basic_loss,0))
 
     return loss
 
 #Initializes a model, compile it optimiying via adam and then proceeds to calculate the loss
-FRmodel = faceRecoModel(input_shape=(3,96,96)) # Understand this model better
+FRmodel = faceRecoModel(input_shape=(3,96,96))
 FRmodel.compile(optimizer = 'adam', loss = triplet_loss, metrics = ['accuracy'])
 
 #Loads the weights from the OpenFace-keras implementation
@@ -74,14 +99,26 @@ load_weights_from_FaceNet(FRmodel)
 #%%
 sys.path.append("C:/Users/Matt/Documents/GitHub/DeepFaceRecThesis/ArtificialVision/images/")
 
+pathy = "C:/Users/Matt/Documents/GitHub/DeepFaceRecThesis/ArtificialVision/"
+
 database = {}
 database["danielle"] = img_to_encoding("C:/Users/Matt/Documents/GitHub/DeepFaceRecThesis/ArtificialVision/images/danielle.png", FRmodel)
 database["younes"] = img_to_encoding("C:/Users/Matt/Documents/GitHub/DeepFaceRecThesis/ArtificialVision/images/younes.jpg", FRmodel)
 database["tian"] = img_to_encoding("C:/Users/Matt/Documents/GitHub/DeepFaceRecThesis/ArtificialVision/images/tian.jpg", FRmodel)
 database["andrew"] = img_to_encoding("C:/Users/Matt/Documents/GitHub/DeepFaceRecThesis/ArtificialVision/images/andrew.jpg", FRmodel)
 database["matt"] = img_to_encoding("C:/Users/Matt/Documents/GitHub/DeepFaceRecThesis/ArtificialVision/images/matt.png", FRmodel)
+database["kian"] = img_to_encoding(pathy+"images/kian.jpg", FRmodel)
+database["dan"] = img_to_encoding(pathy+"images/dan.jpg", FRmodel)
+database["sebastiano"] = img_to_encoding(pathy+"images/sebastiano.jpg", FRmodel)
+database["bertrand"] = img_to_encoding(pathy+"images/bertrand.jpg", FRmodel)
+database["kevin"] = img_to_encoding(pathy+"images/kevin.jpg", FRmodel)
+database["felix"] = img_to_encoding(pathy+"images/felix.jpg", FRmodel)
+database["benoit"] = img_to_encoding(pathy+"images/benoit.jpg", FRmodel)
+database["arnaud"] = img_to_encoding(pathy+"images/arnaud.jpg", FRmodel)
+database["alex"] = img_to_encoding(pathy + "images/alexlabossiere.png", FRmodel)
+database["matt2"] =img_to_encoding(pathy + "images/matt2.jpg")
 
-def who_is_it(image_path, database, model):
+def wer_ist_das(image_path, database, model):
     """
     Implements face recognition for the office by finding who is the person on the image_path image.
 
@@ -98,7 +135,7 @@ def who_is_it(image_path, database, model):
     encoding = img_to_encoding(image_path,model)
 
     # Finds the closest encoding ##
-    min_dist =  #high value initializer
+    min_dist = 100 #high value initializer
 
     # Loop over the database dictionary's names and encodings.
     for (name) in database.keys():
@@ -111,15 +148,14 @@ def who_is_it(image_path, database, model):
             min_dist = dist
             identity = name
 
-    if min_dist > 0.7: #settable parameter for safe recognition
+    if min_dist > 1.0: #settable parameter for safe recognition
         print("Not in the database.")
     else:
         print ("it's " + str(identity) + ", the distance is " + str(min_dist))
 
     return min_dist, identity
 
-#%%
+#%% Testing cell
 
-who_is_it("C:/Users/Matt/Documents/GitHub/DeepFaceRecThesis/ArtificialVision/images/teste_1.jpg", database, FRmodel)
+wer_ist_das(pathy + "images/test_set/M_test_two.png", database, FRmodel)
 #%%
-who_is_it("C:/Users/Matt/Documents/GitHub/DeepFaceRecThesis/ArtificialVision/images/camera_0.jpg", database, FRmodel)
