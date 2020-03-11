@@ -331,6 +331,22 @@ def get_embedding(model, face_pixels): #Runs the CNN on the images
 	yhat = model.predict(samples)
 	return yhat[0]
 
+#testing if the person requesting access is in the database
+@jit(nogil=True,parallel = True)
+def face_recognition(image_embedding, database):
+    dist = 100 #initialize distance
+    for employee in database:
+        dist_candidate = np.linalg.norm(image_embedding-employee)#Calculate L2 distance between the two
+
+        if dist_candidate < dist:
+            dist = dist_candidate
+    if dist > 10:
+        access = "Failed Recognition"
+    else:
+        access = "successful minimum requirement met"#run SVM
+
+    return access, dist
+
 # %% Code Execution: Loading the model
 # #Matt: Parts of the code are from https://machinelearningmastery.com/
 # def _main():

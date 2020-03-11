@@ -56,9 +56,15 @@ from inception_resnet_v1 import _inception_resnet_block
 from inception_resnet_v1 import extract_face
 from inception_resnet_v1 import load_dataset
 from inception_resnet_v1 import get_embedding
+#from inception_resnet_v1 import face_recognition
+
+path1 = "C:/Users/Matt/Documents/GitHub/DeepFaceRecThesis/"
+
+#known bugs:
+#There must be a person in an image (hypothesis)
+#High-res pictures do not fit the system
 
 # %% Load train Images - M: Slowest part of the code, improve
-path1 = "C:/Users/Matt/Documents/GitHub/DeepFaceRecThesis/"
 x,y = load_dataset(path1+"Facenet_keras_Taniai/data/images/")
 print(x.shape)
 print(y.shape)
@@ -83,99 +89,136 @@ print('Modelo Carregado')
 # convert each face in the train set to an embedding
 newTrainX = list()
 for face_pixels in trainX:
-	embedding = get_embedding(model, face_pixels)
-	newTrainX.append(embedding)
+    embedding = get_embedding(model, face_pixels)
+    newTrainX.append(embedding)
 newTrainX = asarray(newTrainX)
 # %%
 
 # convert each face in the test set to an embedding
 newTestX = list()
 for face_pixels in testX:
-	embedding = get_embedding(model, face_pixels)
-	newTestX.append(embedding)
+    embedding = get_embedding(model, face_pixels)
+    newTestX.append(embedding)
 newTestX = asarray(newTestX)
 print(newTestX.shape)
 
-# %% Debugging test: l2 distance
-
-for person in newTestX:
-    for employee in newTrainX:
-        dist = np.linalg.norm(example-employee)#Calculate L2 distance between the two
-        print(dist)
 
 # %%
-
-
 # save arrays to one file in compressed format
 savez_compressed('my_embeddings.npz', newTrainX, trainy, newTestX, testy)
 
+# # %% Recognition execution
+# # load dataset
+# data = load('my_embeddings.npz')
+# trainX, trainy, testX, testy = data['arr_0'], data['arr_1'], data['arr_2'], data['arr_3']
+# print('Dataset: train=%d, test=%d' % (trainX.shape[0], testX.shape[0]))
+#
+# # normalize input vectors
+# in_encoder = Normalizer(norm='l2')
+# trainX = in_encoder.transform(trainX)
+# testX = in_encoder.transform(testX)
+#
+# # label encode targets
+# out_encoder = LabelEncoder()
+# out_encoder.fit(trainy)
+# trainy = out_encoder.transform(trainy)
+# testy = out_encoder.transform(testy)
+#
+# # fit model via SVM
+# model = SVC(kernel='linear',probability=True)
+# model.fit(trainX, trainy)
+#
+# # predict
+# yhat_train = model.predict(trainX)
+# yhat_test = model.predict(testX)
+# # score
+# score_train = accuracy_score(trainy, yhat_train)
+# score_test = accuracy_score(testy, yhat_test)
+# # summarize
+# print('Accuracy: train=%.3f, test=%.3f' % (score_train*100, score_test*100))
+
 # %%
-# load dataset
-data = load('my_embeddings.npz')
-trainX, trainy, testX, testy = data['arr_0'], data['arr_1'], data['arr_2'], data['arr_3']
-print('Dataset: train=%d, test=%d' % (trainX.shape[0], testX.shape[0]))
+#@jit(nogil=True,parallel = True)
+def face_recognition(image_embedding, database):
+    dist = 100 #initialize distance
+    for employee in database:
+        dist_candidate = np.linalg.norm(image_embedding-employee)#Calculate L2 distance between the two
 
-# normalize input vectors
-in_encoder = Normalizer(norm='l2')
-trainX = in_encoder.transform(trainX)
-testX = in_encoder.transform(testX)
+        if dist_candidate < dist:
+            dist = dist_candidate
 
-# label encode targets
-out_encoder = LabelEncoder()
-out_encoder.fit(trainy)
-trainy = out_encoder.transform(trainy)
-testy = out_encoder.transform(testy)
-
-# fit model via SVM
-model = SVC(kernel='linear',probability=True)
-model.fit(trainX, trainy)
-
-# predict
-yhat_train = model.predict(trainX)
-yhat_test = model.predict(testX)
-# score
-score_train = accuracy_score(trainy, yhat_train)
-score_test = accuracy_score(testy, yhat_test)
-# summarize
-print('Accuracy: train=%.3f, test=%.3f' % (score_train*100, score_test*100))
+    if dist > 2:
+        access = "Failed Recognition"
+    else:
+        access = "successful minimum requirement met"#run SVM
+    return access, dist
 
 # %% Teste aleatório
 # load faces
 data = load('my_dataset.npz')
 testX_faces = data['arr_2']
+
 # load face embeddings
 data = load('my_embeddings.npz')
 trainX, trainy, testX, testy = data['arr_0'], data['arr_1'], data['arr_2'], data['arr_3']
+
 # normalize input vectors
 in_encoder = Normalizer(norm='l2')
 trainX = in_encoder.transform(trainX)
 testX = in_encoder.transform(testX)
+
 # label encode targets
 out_encoder = LabelEncoder()
 out_encoder.fit(trainy)
 trainy = out_encoder.transform(trainy)
 testy = out_encoder.transform(testy)
+
 # fit model
 model = SVC(kernel='linear', probability=True)
 model.fit(trainX, trainy)
+
 # test model on a random example from the test dataset
-selection = choice([i for i in range(testX.shape[0])])
+#selection = choice([i for i in range(testX.shape[0])]) #random selection of example
+selection = 4 #value for 0 to 9, to choose the example in place
 random_face_pixels = testX_faces[selection]
 random_face_emb = testX[selection]
 random_face_class = testy[selection]
 random_face_name = out_encoder.inverse_transform([random_face_class])
-# prediction for the face
-samples = expand_dims(random_face_emb, axis=0)
-yhat_class = model.predict(samples)
-yhat_prob = model.predict_proba(samples)
-# get name
-class_index = yhat_class[0]
-class_probability = yhat_prob[0,class_index] * 100
-predict_names = out_encoder.inverse_transform(yhat_class)
-print('Predicted: %s (%.3f)' % (predict_names[0], class_probability))
-print('Expected: %s' % random_face_name[0])
-# plot for fun
-pyplot.imshow(random_face_pixels)
-title = '%s (%.3f)' % (predict_names[0], class_probability)
-pyplot.title(title)
-pyplot.show()
+
+#Com a imagem aleatória selecionada, realizar teste de validaçao minima
+#
+# #debugging
+# dist = 100 #initialize distance
+# for employee in trainX:
+#     dist_candidate = np.linalg.norm(random_face_emb-employee)#Calculate L2 distance between the two
+#     print(dist_candidate)
+#     if dist_candidate < dist:
+#         print(dist,dist_candidate<dist)
+#         dist = dist_candidate
+# if dist > 10:
+#     access = "Failed Recognition"
+# else:
+#    access = "successful minimum requirement met"#run SVM
+# #%% debugging/
+
+
+access, certainty = face_recognition(random_face_emb, trainX)
+if access == "Failed Recognition":
+    print(access, certainty)
+elif access == "successful minimum requirement met":
+    print(access, certainty)
+    # prediction for the face
+    samples = expand_dims(random_face_emb, axis=0)
+    yhat_class = model.predict(samples)
+    yhat_prob = model.predict_proba(samples)
+    # get name
+    class_index = yhat_class[0]
+    class_probability = yhat_prob[0,class_index] * 100
+    predict_names = out_encoder.inverse_transform(yhat_class)
+    print('Predicted: %s (%.3f)' % (predict_names[0], class_probability))
+    print('Expected: %s' % random_face_name[0])
+    # plot for fun
+    pyplot.imshow(random_face_pixels)
+    title = '%s (%.3f)' % (predict_names[0], class_probability)
+    pyplot.title(title)
+    pyplot.show()
