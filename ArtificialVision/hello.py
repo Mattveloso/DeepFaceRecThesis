@@ -30,6 +30,7 @@
 #however no student shall use this code or parts of it to complete their assignements
 #in the coursera platform, since plagiarism goes directly against the coursera honour code.
 
+
 import numpy as np
 from numpy import genfromtxt
 import tensorflow as tf
@@ -37,7 +38,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import cv2
 import os
-from keras.models import Sequential
+from keras.models import Sequential, load_model
 from keras.layers import Conv2D, ZeroPadding2D, Activation, Input, concatenate
 from keras.models import Model
 from keras.layers.normalization import BatchNormalization
@@ -89,17 +90,18 @@ def triplet_loss(y_true, y_pred, alpha = 0.2):
 
     return loss
 
-#Initializes a model, compile it optimiying via adam and then proceeds to calculate the loss
-FRmodel = faceRecoModel(input_shape=(3,96,96))
-FRmodel.compile(optimizer = 'adam', loss = triplet_loss, metrics = ['accuracy'])
-
-#Loads the weights from the OpenFace-keras implementation
-load_weights_from_FaceNet(FRmodel)
-
-#%%
 sys.path.append("C:/Users/Matt/Documents/GitHub/DeepFaceRecThesis/ArtificialVision/images/")
 
 pathy = "C:/Users/Matt/Documents/GitHub/DeepFaceRecThesis/ArtificialVision/"
+
+#Initializes a model, compile it optimizing via adam and then proceeds to calculate the loss
+FRmodel = faceRecoModel(input_shape=(3,96,96))
+FRmodel.compile(optimizer = 'adam', loss = triplet_loss, metrics = ['accuracy'])
+#FRmodel = load_model(pathy+'FromAndrewNg/nn4.small2.v7.h5')
+#Loads the weights from the OpenFace-keras implementation
+#load_weights_from_FaceNet(FRmodel)
+
+#%%
 
 database = {}
 database["danielle"] = img_to_encoding("C:/Users/Matt/Documents/GitHub/DeepFaceRecThesis/ArtificialVision/images/danielle.png", FRmodel)
