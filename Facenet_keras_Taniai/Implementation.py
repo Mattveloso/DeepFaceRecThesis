@@ -141,23 +141,25 @@ savez_compressed('my_embeddings.npz', newTrainX, trainy, newTestX, testy)
 #@jit(nogil=True,parallel = True)
 def face_recognition(image_embedding, database):
     dist = 100 #initialize distance
-    for employee in database:
-        dist_candidate = np.linalg.norm(image_embedding-employee)#Calculate L2 distance between the two
+    index = -1
+    for indice in range(database.shape[0]):
+        dist_candidate = np.linalg.norm(image_embedding-database[indice,:])#Calculate L2 distance between the two
 
         if dist_candidate < dist:
             dist = dist_candidate
+            index = indice
 
     if dist > 2:
         access = "Failed Recognition"
     else:
         access = "successful minimum requirement met"#run SVM
-    return access, dist
+    return access, dist, index
 
 # %% Teste aleatório
 # load faces
 data = load('my_dataset.npz')
 testX_faces = data['arr_2']
-
+trainX_faces = data['arr_0']
 # load face embeddings
 data = load('my_embeddings.npz')
 trainX, trainy, testX, testy = data['arr_0'], data['arr_1'], data['arr_2'], data['arr_3']
@@ -173,13 +175,14 @@ out_encoder.fit(trainy)
 trainy = out_encoder.transform(trainy)
 testy = out_encoder.transform(testy)
 
-# fit model
-model = SVC(kernel='linear', probability=True)
-model.fit(trainX, trainy)
+# fit model - ignored for now
+#model = SVC(kernel='linear', probability=True)
+#model.fit(trainX, trainy)
 
 # test model on a random example from the test dataset
+#M: Como próximo passo necessito de mudar a necessidade de se utilizar
 #selection = choice([i for i in range(testX.shape[0])]) #random selection of example
-selection = 4 #value for 0 to 9, to choose the example in place
+selection = 5 #value for 0 to 7, to choose the example in place
 random_face_pixels = testX_faces[selection]
 random_face_emb = testX[selection]
 random_face_class = testy[selection]
@@ -201,24 +204,37 @@ random_face_name = out_encoder.inverse_transform([random_face_class])
 #    access = "successful minimum requirement met"#run SVM
 # #%% debugging/
 
-
-access, certainty = face_recognition(random_face_emb, trainX)
+access, certainty, index = face_recognition(random_face_emb, trainX)
 if access == "Failed Recognition":
     print(access, certainty)
 elif access == "successful minimum requirement met":
-    print(access, certainty)
-    # prediction for the face
-    samples = expand_dims(random_face_emb, axis=0)
-    yhat_class = model.predict(samples)
-    yhat_prob = model.predict_proba(samples)
-    # get name
-    class_index = yhat_class[0]
-    class_probability = yhat_prob[0,class_index] * 100
-    predict_names = out_encoder.inverse_transform(yhat_class)
-    print('Predicted: %s (%.3f)' % (predict_names[0], class_probability))
-    print('Expected: %s' % random_face_name[0])
-    # plot for fun
-    pyplot.imshow(random_face_pixels)
-    title = '%s (%.3f)' % (predict_names[0], class_probability)
-    pyplot.title(title)
+    print(access, certainty, index)
+    # #plt.imshow(trainX_faces[index+1,:]) #plt para ver a face mais parecida que o algo achou
+    # # prediction for the face
+    # samples = expand_dims(random_face_emb, axis=0)
+    # yhat_class = model.predict(samples)
+    # yhat_prob = model.predict_proba(samples)
+    # # get name
+    # class_index = yhat_class[0]
+    # class_probability = yhat_prob[0,class_index] * 100
+    # predict_names = out_encoder.inverse_transform(yhat_class)
+    # print('Predicted: %s (%.3f)' % (predict_names[0], class_probability))
+    # print('Expected: %s' % random_face_name[0])
+    # #plot for fun
+    # pyplot.imshow(random_face_pixels)
+    # title = '%s (%.3f)' % (predict_names[0], class_probability)
+    # pyplot.title(title)
+    # pyplot.show()
+
+    # %% Plot image being tested
+    #pyplot.imshow(random_face_pixels)
+    #title = '%s (%.3f)' % (predict_names[0], class_probability)
+    #pyplot.title(title)
+
+    print(out_encoder.inverse_transform([testy[index]]))
+    # %% Plot image found to be the closest and its class
+    plt.imshow(trainX_faces[index,:])
     pyplot.show()
+    certainty = (1/(1+certainty))*100
+    title = 'É o(a): %s, Probabilidade: (%.3f)' % (trainy[index], certainty)
+    pyplot.title(title)
