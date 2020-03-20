@@ -62,51 +62,61 @@ path1 = "C:/Users/Matt/Documents/GitHub/DeepFaceRecThesis/"
 
 #known bugs:
 #There must be a person in an image (hypothesis)
-#High-res pictures do not fit the system
+#High-res pictures do not fit the system ->???
+#MTCNN is complicated and I do not understand how to use it.
 
-# %% Load train Images - M: Slowest part of the code, improve
-x,y = load_dataset(path1+"Facenet_keras_Taniai/data/images/")
-print(x.shape)
-print(y.shape)
+
+# # %% Load train Images - M: Slowest part of the code, improve
+# x,y = load_dataset(path1+"Facenet_keras_Taniai/data/images/")
+x,y = load_dataset(path1+"Facenet_keras_Taniai/data/Single_train_image/")
 
 # %% Load Test images
-testx, testy = load_dataset(path1+"Facenet_keras_Taniai/data/Test/")
+#Xtest, Ytest = load_dataset(path1+"Facenet_keras_Taniai/data/Test/")
+Xtest, Ytest = load_dataset(path1+"Facenet_keras_Taniai/data/Single_test_image/")
 
 # %% savez_compressed
-savez_compressed('my_dataset.npz', x, y, testx, testy)
+#savez_compressed('my_dataset.npz', x, y, testx, testy)
+savez_compressed('One_train_example.npz', x, y)
+#savez_compressed('test_data.npz', Xtest, Ytest)
+savez_compressed('One_example.npz', Xtest, Ytest)
 
 # %% Loading and executing
 # load the face dataset - for when the npz file is already created previously
-data = load('my_dataset.npz')
-trainX, trainy, testX, testy = data['arr_0'], data['arr_1'], data['arr_2'], data['arr_3']
+#data = load('my_dataset.npz')
+data = load('One_train_example.npz')
+#trainX, trainy, testX, testy = data['arr_0'], data['arr_1'], data['arr_2'], data['arr_3']
+trainX, trainy = data['arr_0'], data['arr_1']
+#data2= load('test_data.npz')
+data2 = load('One_example.npz')
+testX, testy = data2['arr_0'], data2['arr_1']
 print('Carregado: ', trainX.shape, trainy.shape, testX.shape, testy.shape)
 
 # load the facenet model
 model = load_model(path1+'Facenet_keras_Taniai/model/facenet_keras.h5')
 print('Modelo Carregado')
 
-#%%
+
 # convert each face in the train set to an embedding
 newTrainX = list()
 for face_pixels in trainX:
-    embedding = get_embedding(model, face_pixels)
-    newTrainX.append(embedding)
+	embedding = get_embedding(model, face_pixels)
+	newTrainX.append(embedding)
 newTrainX = asarray(newTrainX)
 # %%
 
 # convert each face in the test set to an embedding
 newTestX = list()
 for face_pixels in testX:
-    embedding = get_embedding(model, face_pixels)
-    newTestX.append(embedding)
+	embedding = get_embedding(model, face_pixels)
+	newTestX.append(embedding)
 newTestX = asarray(newTestX)
 print(newTestX.shape)
 
 
 # %%
 # save arrays to one file in compressed format
-savez_compressed('my_embeddings.npz', newTrainX, trainy, newTestX, testy)
-
+#savez_compressed('my_embeddings2.npz', newTrainX, trainy, newTestX, testy)
+savez_compressed('my_embeddings3.npz', newTrainX, trainy, newTestX, testy)
 # # %% Recognition execution
 # # load dataset
 # data = load('my_embeddings.npz')
@@ -140,28 +150,33 @@ savez_compressed('my_embeddings.npz', newTrainX, trainy, newTestX, testy)
 # %%
 #@jit(nogil=True,parallel = True)
 def face_recognition(image_embedding, database):
-    dist = 100 #initialize distance
-    for employee in database:
-        dist_candidate = np.linalg.norm(image_embedding-employee)#Calculate L2 distance between the two
+	dist = 100 #initialize distance
+	index = -1
+	for indice in range(database.shape[0]):
+		dist_candidate = np.linalg.norm(image_embedding-database[indice,:])#Calculate L2 distance between the two
 
-        if dist_candidate < dist:
-            dist = dist_candidate
+		if dist_candidate < dist:
+			dist = dist_candidate
+			index = indice
 
-    if dist > 2:
-        access = "Failed Recognition"
-    else:
-        access = "successful minimum requirement met"#run SVM
-    return access, dist
+	if dist > 1:
+		access = "Failed Recognition"
+	else:
+		access = "successful minimum requirement met"#run SVM
+	return access, dist, index
 
 # %% Teste aleatório
 # load faces
-data = load('my_dataset.npz')
-testX_faces = data['arr_2']
-
+data = load('One_example.npz')
+testX_faces = data['arr_0']
+data = load('One_train_example.npz')
+trainX_faces = data['arr_0']
 # load face embeddings
-data = load('my_embeddings.npz')
-trainX, trainy, testX, testy = data['arr_0'], data['arr_1'], data['arr_2'], data['arr_3']
-
+data = load('my_embeddings3.npz')
+trainX, trainy = data['arr_0'], data['arr_1']
+#data = load('my_embeddings2.npz')
+testX , testy = data['arr_2'], data['arr_3']
+# %%
 # normalize input vectors
 in_encoder = Normalizer(norm='l2')
 trainX = in_encoder.transform(trainX)
@@ -169,22 +184,25 @@ testX = in_encoder.transform(testX)
 
 # label encode targets
 out_encoder = LabelEncoder()
-out_encoder.fit(trainy)
-trainy = out_encoder.transform(trainy)
+out_encoder.fit(testy)
 testy = out_encoder.transform(testy)
-
-# fit model
-model = SVC(kernel='linear', probability=True)
-model.fit(trainX, trainy)
+trainy = out_encoder.transform(trainy)
+#%%
+# fit model - ignored for now
+#model = SVC(kernel='linear', probability=True)
+#model.fit(trainX, trainy)
 
 # test model on a random example from the test dataset
+#M: Como próximo passo necessito de mudar a necessidade de se utilizar
 #selection = choice([i for i in range(testX.shape[0])]) #random selection of example
-selection = 4 #value for 0 to 9, to choose the example in place
+# %%
+selection = 2 #value from 0 to len(test_samples), to choose the example in place
 random_face_pixels = testX_faces[selection]
 random_face_emb = testX[selection]
 random_face_class = testy[selection]
 random_face_name = out_encoder.inverse_transform([random_face_class])
 
+#%% debugging
 #Com a imagem aleatória selecionada, realizar teste de validaçao minima
 #
 # #debugging
@@ -201,24 +219,37 @@ random_face_name = out_encoder.inverse_transform([random_face_class])
 #    access = "successful minimum requirement met"#run SVM
 # #%% debugging/
 
-
-access, certainty = face_recognition(random_face_emb, trainX)
+access, certainty, index = face_recognition(random_face_emb, trainX)
 if access == "Failed Recognition":
-    print(access, certainty)
+	print(access, certainty)
+
 elif access == "successful minimum requirement met":
-    print(access, certainty)
-    # prediction for the face
-    samples = expand_dims(random_face_emb, axis=0)
-    yhat_class = model.predict(samples)
-    yhat_prob = model.predict_proba(samples)
-    # get name
-    class_index = yhat_class[0]
-    class_probability = yhat_prob[0,class_index] * 100
-    predict_names = out_encoder.inverse_transform(yhat_class)
-    print('Predicted: %s (%.3f)' % (predict_names[0], class_probability))
-    print('Expected: %s' % random_face_name[0])
-    # plot for fun
-    pyplot.imshow(random_face_pixels)
-    title = '%s (%.3f)' % (predict_names[0], class_probability)
-    pyplot.title(title)
-    pyplot.show()
+	print(access, certainty, index)
+	# #plt.imshow(trainX_faces[index+1,:]) #plt para ver a face mais parecida que o algo achou
+	# # prediction for the face
+	# samples = expand_dims(random_face_emb, axis=0)
+	# yhat_class = model.predict(samples)
+	# yhat_prob = model.predict_proba(samples)
+	# # get name
+	# class_index = yhat_class[0]
+	# class_probability = yhat_prob[0,class_index] * 100
+	# predict_names = out_encoder.inverse_transform(yhat_class)
+	# print('Predicted: %s (%.3f)' % (predict_names[0], class_probability))
+	# print('Expected: %s' % random_face_name[0])
+	# #plot for fun
+	# pyplot.imshow(random_face_pixels)
+	# title = '%s (%.3f)' % (predict_names[0], class_probability)
+	# pyplot.title(title)
+	# pyplot.show()
+
+	# %% Plot image being tested
+	pyplot.imshow(random_face_pixels)
+
+	# %% Plot image found to be the closest and its class
+	chosen_face_class = trainy[index]
+	chosen_face_name = out_encoder.inverse_transform([chosen_face_class])
+	plt.imshow(trainX_faces[index,:])
+	certainty = (1/(1+certainty))*100
+	title = 'É : %s, Probabilidade: (%.3f)' % (chosen_face_name, certainty)
+	pyplot.title(title)
+	pyplot.show()
