@@ -23,10 +23,11 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import cv2
 import os
-sys.path.append("C:/Users/Matt/Documents/GitHub/DeepFaceRecThesis/Facenet_keras_Taniai/code/")
-sys.path.append("C:/Users/Matt/Documents/GitHub/DeepFaceRecThesis/Facenet_keras_Taniai/model/")
-sys.path.append("C:/Users/Matt/Documents/GitHub/DeepFaceRecThesis/Facenet_keras_Taniai/weights/")
-sys.path.append("C:/Users/Matt/Documents/GitHub/DeepFaceRecThesis/Facenet_keras_Taniai/")
+import timeit
+sys.path.append("C:/Users/Shadow/Documents/GitHub/DeepFaceRecThesis/Facenet_keras_Taniai/code/")
+sys.path.append("C:/Users/Shadow/Documents/GitHub/DeepFaceRecThesis/Facenet_keras_Taniai/model/")
+sys.path.append("C:/Users/Shadow/Documents/GitHub/DeepFaceRecThesis/Facenet_keras_Taniai/weights/")
+sys.path.append("C:/Users/Shadow/Documents/GitHub/DeepFaceRecThesis/Facenet_keras_Taniai/")
 
 import mtcnn
 from mtcnn import MTCNN
@@ -58,43 +59,39 @@ from inception_resnet_v1 import load_dataset
 from inception_resnet_v1 import get_embedding
 #from inception_resnet_v1 import face_recognition
 
-path1 = "C:/Users/Matt/Documents/GitHub/DeepFaceRecThesis/"
+path1 = "C:/Users/Shadow/Documents/GitHub/DeepFaceRecThesis/"
 
-#known bugs:
-#There must be a person in an image (hypothesis)
-#High-res pictures do not fit the system ->???
-#MTCNN is complicated and I do not understand how to use it.
-
-
-# # %% Load train Images - M: Slowest part of the code, improve
-# x,y = load_dataset(path1+"Facenet_keras_Taniai/data/images/")
-x,y = load_dataset(path1+"Facenet_keras_Taniai/data/Single_train_image/")
-
-# %% Load Test images
-#Xtest, Ytest = load_dataset(path1+"Facenet_keras_Taniai/data/Test/")
-Xtest, Ytest = load_dataset(path1+"Facenet_keras_Taniai/data/Single_test_image/")
-
-# %% savez_compressed
-#savez_compressed('my_dataset.npz', x, y, testx, testy)
-savez_compressed('One_train_example.npz', x, y)
-#savez_compressed('test_data.npz', Xtest, Ytest)
-savez_compressed('One_example.npz', Xtest, Ytest)
-
-# %% Loading and executing
-# load the face dataset - for when the npz file is already created previously
-#data = load('my_dataset.npz')
-data = load('One_train_example.npz')
-#trainX, trainy, testX, testy = data['arr_0'], data['arr_1'], data['arr_2'], data['arr_3']
-trainX, trainy = data['arr_0'], data['arr_1']
-#data2= load('test_data.npz')
-data2 = load('One_example.npz')
-testX, testy = data2['arr_0'], data2['arr_1']
-print('Carregado: ', trainX.shape, trainy.shape, testX.shape, testy.shape)
-
-# load the facenet model
+# %% load the facenet model
 model = load_model(path1+'Facenet_keras_Taniai/model/facenet_keras.h5')
 print('Modelo Carregado')
 
+#known bugs:
+#None, however the execution is too slow
+
+# # %% Load train Images - M: Slowest part of the code, improve
+x,y = load_dataset(path1+"Facenet_keras_Taniai/data/images/")
+#x,y = load_dataset(path1+"Facenet_keras_Taniai/data/Single_train_image/")
+
+# %% Load Test images
+Xtest, Ytest = load_dataset(path1+"Facenet_keras_Taniai/data/Test/")
+#Xtest, Ytest = load_dataset(path1+"Facenet_keras_Taniai/data/Single_test_image/")
+
+# %% savez_compressed
+savez_compressed('my_dataset.npz', x, y)
+#savez_compressed('One_train_example.npz', x, y)
+savez_compressed('test_data.npz', Xtest, Ytest)
+#savez_compressed('One_example.npz', Xtest, Ytest)
+
+# %% Loading and executing
+# load the face dataset - for when the npz file is already created previously
+data = load('my_dataset.npz')
+#data = load('One_train_example.npz')
+#trainX, trainy, testX, testy = data['arr_0'], data['arr_1'], data['arr_2'], data['arr_3']
+trainX, trainy = data['arr_0'], data['arr_1']
+data2= load('test_data.npz')
+#data2 = load('One_example.npz')
+testX, testy = data2['arr_0'], data2['arr_1']
+print('Carregado: ', trainX.shape, trainy.shape, testX.shape, testy.shape)
 
 # convert each face in the train set to an embedding
 newTrainX = list()
@@ -102,7 +99,6 @@ for face_pixels in trainX:
 	embedding = get_embedding(model, face_pixels)
 	newTrainX.append(embedding)
 newTrainX = asarray(newTrainX)
-# %%
 
 # convert each face in the test set to an embedding
 newTestX = list()
@@ -115,8 +111,8 @@ print(newTestX.shape)
 
 # %%
 # save arrays to one file in compressed format
-#savez_compressed('my_embeddings2.npz', newTrainX, trainy, newTestX, testy)
-savez_compressed('my_embeddings3.npz', newTrainX, trainy, newTestX, testy)
+savez_compressed('my_embeddings2.npz', newTrainX, trainy, newTestX, testy)
+#savez_compressed('my_embeddings3.npz', newTrainX, trainy, newTestX, testy)
 # # %% Recognition execution
 # # load dataset
 # data = load('my_embeddings.npz')
@@ -167,12 +163,12 @@ def face_recognition(image_embedding, database):
 
 # %% Teste aleatório
 # load faces
-data = load('One_example.npz')
+data = load('my_dataset.npz')
 testX_faces = data['arr_0']
-data = load('One_train_example.npz')
+data = load('test_data.npz')
 trainX_faces = data['arr_0']
 # load face embeddings
-data = load('my_embeddings3.npz')
+data = load('my_embeddings2.npz')
 trainX, trainy = data['arr_0'], data['arr_1']
 #data = load('my_embeddings2.npz')
 testX , testy = data['arr_2'], data['arr_3']
@@ -202,7 +198,8 @@ random_face_emb = testX[selection]
 random_face_class = testy[selection]
 random_face_name = out_encoder.inverse_transform([random_face_class])
 
-#%% debugging
+#the code works but i have to fix it due to the fact that the new face detection is confusing the old counting algo
+# #debugging
 #Com a imagem aleatória selecionada, realizar teste de validaçao minima
 #
 # #debugging
@@ -217,7 +214,7 @@ random_face_name = out_encoder.inverse_transform([random_face_class])
 #     access = "Failed Recognition"
 # else:
 #    access = "successful minimum requirement met"#run SVM
-# #%% debugging/
+# # debugging/
 
 access, certainty, index = face_recognition(random_face_emb, trainX)
 if access == "Failed Recognition":
@@ -249,7 +246,7 @@ elif access == "successful minimum requirement met":
 	chosen_face_class = trainy[index]
 	chosen_face_name = out_encoder.inverse_transform([chosen_face_class])
 	plt.imshow(trainX_faces[index,:])
-	certainty = (1/(1+certainty))*100
+	certainty = (1/(np.power(2,certainty)))*100
 	title = 'É : %s, Probabilidade: (%.3f)' % (chosen_face_name, certainty)
 	pyplot.title(title)
 	pyplot.show()

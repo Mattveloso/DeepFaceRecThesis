@@ -36,10 +36,12 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import cv2
 import os
-sys.path.append("C:/Users/Matt/Documents/GitHub/DeepFaceRecThesis/Facenet_keras_Taniai/code/")
-sys.path.append("C:/Users/Matt/Documents/GitHub/DeepFaceRecThesis/Facenet_keras_Taniai/model/")
-sys.path.append("C:/Users/Matt/Documents/GitHub/DeepFaceRecThesis/Facenet_keras_Taniai/weights/")
-sys.path.append("C:/Users/Matt/Documents/GitHub/DeepFaceRecThesis/Facenet_keras_Taniai/")
+import timeit
+import time
+sys.path.append("C:/Users/Shadow/Documents/GitHub/DeepFaceRecThesis/Facenet_keras_Taniai/code/")
+sys.path.append("C:/Users/Shadow/Documents/GitHub/DeepFaceRecThesis/Facenet_keras_Taniai/model/")
+sys.path.append("C:/Users/Shadow/Documents/GitHub/DeepFaceRecThesis/Facenet_keras_Taniai/weights/")
+sys.path.append("C:/Users/Shadow/Documents/GitHub/DeepFaceRecThesis/Facenet_keras_Taniai/")
 
 import mtcnn
 from mtcnn import MTCNN
@@ -61,6 +63,8 @@ from sklearn.preprocessing import Normalizer
 from sklearn.svm import SVC
 import sklearn
 from random import choice
+
+detector = MTCNN()
 # %% Standard imported functions
 def scaling(x, scale):
 	return x * scale
@@ -256,19 +260,75 @@ def InceptionResNetV1(input_shape=(160, 160, 3), classes=128, dropout_keep_prob=
 
 # %% M: Function definition
 # extract a single face from a given photograph
+#print(timeit.timeit('''
+# from functools import partial
+#
+# from keras.models import Model
+# from keras.models import load_model #M
+# from keras.layers import Activation
+# from keras.layers import BatchNormalization
+# from keras.layers import Concatenate
+# from keras.layers import Conv2D
+# from keras.layers import Dense
+# from keras.layers import Dropout
+# from keras.layers import GlobalAveragePooling2D
+# from keras.layers import Input
+# from keras.layers import Lambda
+# from keras.layers import MaxPooling2D
+# from keras.layers import add
+# from keras import backend as K
+#
+# import sys
+# import numpy as np
+# from numpy import genfromtxt
+# import tensorflow as tf
+# import matplotlib.pyplot as plt
+# import pandas as pd
+# import cv2
+# import os
+# import timeit
+# sys.path.append("C:/Users/Shadow/Documents/GitHub/DeepFaceRecThesis/Facenet_keras_Taniai/code/")
+# sys.path.append("C:/Users/Shadow/Documents/GitHub/DeepFaceRecThesis/Facenet_keras_Taniai/model/")
+# sys.path.append("C:/Users/Shadow/Documents/GitHub/DeepFaceRecThesis/Facenet_keras_Taniai/weights/")
+# sys.path.append("C:/Users/Shadow/Documents/GitHub/DeepFaceRecThesis/Facenet_keras_Taniai/")
+#
+# import mtcnn
+# from mtcnn import MTCNN
+# import PIL
+# from os import listdir
+# from os.path import isdir
+# from PIL import Image
+# from matplotlib import pyplot
+# from numpy import savez_compressed
+# from numpy import asarray
+# from numpy import load
+# from numpy import expand_dims
+# import numba
+# from numba import njit, jit
+#
+# from sklearn.metrics import accuracy_score
+# from sklearn.preprocessing import LabelEncoder
+# from sklearn.preprocessing import Normalizer
+# from sklearn.svm import SVC
+# import sklearn
+# from random import choice
+
+path1 = "C:/Users/Shadow/Documents/GitHub/DeepFaceRecThesis/"
 #@jit(nogil=True,parallel=True)
 def extract_face(filename, required_size=(160, 160)):
 	# load image from file
 	#image = PIL.Image.open(filename)
 	image = cv2.cvtColor(cv2.imread(filename),cv2.COLOR_BGR2RGB)
 	# convert to RGB, if needed
-	#image = image.convert('RGB')
 	# convert to array
 	pixels = np.asarray(image)
 	# create the detector, using default weights
-	detector = MTCNN()
+	# detector = MTCNN()
 	# detect faces in the image
+	start = time.time()
 	results = detector.detect_faces(image)
+	total = time.time()-start
+	print(total)
 	# extract the bounding box from the first face
 	#x = np.array(range(0,len([1,2,3,4,5])))
 	x = np.array(range(0,len(results)))
@@ -291,34 +351,8 @@ def extract_face(filename, required_size=(160, 160)):
 		image = image.resize(required_size)
 		face_array[face] = np.asarray(image)
 	return face_array
-# @jit(nogil=True,parallel=True)
-# def extract_face(filename, required_size=(160, 160)):
-# 	# load image from file
-# 	image = PIL.Image.open(filename)
-# 	# convert to RGB, if needed
-# 	image = image.convert('RGB')
-# 	# convert to array
-# 	pixels = np.asarray(image)
-# 	# create the detector, using default weights
-# 	detector = mtcnn.MTCNN()
-# 	# detect faces in the image
-# 	results = detector.detect_faces(pixels)
-# 	# extract the bounding box from the first face
-# 	x1, y1, width, height = results[0]['box']
-# 	# bug fix
-# 	x1, y1 = abs(x1), abs(y1)
-# 	x2, y2 = x1 + width, y1 + height
-# 	# extract the face
-# 	face = pixels[y1:y2, x1:x2]
-# 	# resize pixels to the model size
-# 	image = PIL.Image.fromarray(face)
-# 	image = image.resize(required_size)
-# 	face_array = np.asarray(image)
-#
-# 	return face_array
 
 # load images and extract faces for all images in a directory
-#@jit(nogil=True,parallel=True)
 def load_faces(directory):
 	faces = list()
 	# enumerate files
@@ -332,7 +366,6 @@ def load_faces(directory):
 			faces.append(cara)
 	return faces
 
-#@jit(nogil=True,parallel=True)
 def load_dataset(directory):
 	X, y = list(), list()
 	# enumerate folders, on per class
@@ -354,7 +387,6 @@ def load_dataset(directory):
 	return np.asarray(X), np.asarray(y)
 
 # get the face embedding for one face
-#@jit(nogil=True,parallel=True)
 def get_embedding(model, face_pixels): #Runs the CNN on the images
 	# scale pixel values
 	face_pixels = face_pixels.astype('float32')
@@ -368,7 +400,6 @@ def get_embedding(model, face_pixels): #Runs the CNN on the images
 	return yhat[0]
 
 #testing if the person requesting access is in the database
-#@jit(nogil=True,parallel = True)
 def face_recognition(image_embedding, database):
 	dist = 100 #initialize distance
 	for employee in database:
@@ -383,12 +414,7 @@ def face_recognition(image_embedding, database):
 
 	return access, dist
 
-#%% debugging
-path1 = "C:/Users/Matt/Documents/GitHub/DeepFaceRecThesis/"
-
-Xtest, Ytest = load_dataset(path1+"Facenet_keras_Taniai/data/Single_test_image/")
-
-# %%
+#Xtest, Ytest = load_dataset(path1+"Facenet_keras_Taniai/data/Single_test_image/")#''', number = 10))
 
 # %% Code Execution: Loading the model
 # #Matt: Parts of the code are from https://machinelearningmastery.com/
