@@ -67,6 +67,7 @@ print('Modelo Carregado')
 
 #known bugs:
 #Execution of testing is not automated
+#The code should have a double verification to avoid false positives and avoid raising the threshhold
 
 # %% Load train Images - M: Slowest part of the code, improve
 x,y = load_dataset(path1+"Facenet_keras_Taniai/data/images/")
@@ -107,65 +108,40 @@ for face_pixels in testX:
 newTestX = asarray(newTestX)
 print(newTestX.shape)
 
-
-# %%
 # save arrays to one file in compressed format
 savez_compressed('my_embeddings2.npz', newTrainX, trainy, newTestX, testy)
 #savez_compressed('my_embeddings3.npz', newTrainX, trainy, newTestX, testy)
-# # %% Recognition execution
-# # load dataset
-# data = load('my_embeddings.npz')
-# trainX, trainy, testX, testy = data['arr_0'], data['arr_1'], data['arr_2'], data['arr_3']
-# print('Dataset: train=%d, test=%d' % (trainX.shape[0], testX.shape[0]))
-#
-# # normalize input vectors
-# in_encoder = Normalizer(norm='l2')
-# trainX = in_encoder.transform(trainX)
-# testX = in_encoder.transform(testX)
-#
-# # label encode targets
-# out_encoder = LabelEncoder()
-# out_encoder.fit(trainy)
-# trainy = out_encoder.transform(trainy)
-# testy = out_encoder.transform(testy)
-#
-# # fit model via SVM
-# model = SVC(kernel='linear',probability=True)
-# model.fit(trainX, trainy)
-#
-# # predict
-# yhat_train = model.predict(trainX)
-# yhat_test = model.predict(testX)
-# # score
-# score_train = accuracy_score(trainy, yhat_train)
-# score_test = accuracy_score(testy, yhat_test)
-# # summarize
-# print('Accuracy: train=%.3f, test=%.3f' % (score_train*100, score_test*100))
-
 # %%
 #@jit(nogil=True,parallel = True)
 def face_recognition(image_embedding, database):
 	dist = 100 #initialize distance
+	dist2 = 100
 	index = -1
 	for indice in range(database.shape[0]):
 		dist_candidate = np.linalg.norm(image_embedding-database[indice,:])#Calculate L2 distance between the two
 
-		if dist_candidate < dist:
-			dist = dist_candidate
-			index = indice
+		if dist_candidate < dist2:
+			dist2 = dist_candidate
+			if dist2 < dist:
+				a = dist #temporary variable to switch values
+				dist = dist2
+				dist2 = a
+				index = indice
 
 	if dist > 1:
 		access = "Failed Recognition"
+	elif dist2 > 1:
+		access = "Failed Recognition"
 	else:
 		access = "successful minimum requirement met"#run SVM
-	return access, dist, index
+	return access, dist, dist2, index
 
 # %% Teste aleatório
 # load faces
 data = load('my_dataset.npz')
-testX_faces = data['arr_0']
-data = load('test_data.npz')
 trainX_faces = data['arr_0']
+data = load('test_data.npz')
+testX_faces = data['arr_0']
 # load face embeddings
 data = load('my_embeddings2.npz')
 trainX, trainy = data['arr_0'], data['arr_1']
@@ -182,69 +158,31 @@ out_encoder = LabelEncoder()
 out_encoder.fit(testy)
 testy = out_encoder.transform(testy)
 trainy = out_encoder.transform(trainy)
-#%%
-# fit model - used when applying svm
-#model = SVC(kernel='linear', probability=True)
-#model.fit(trainX, trainy)
 
-# test model on a random example from the test dataset
-#M: Como próximo passo necessito de mudar a necessidade de se utilizar
-#selection = choice([i for i in range(testX.shape[0])]) #random selection of example
 # %%
-selection = 2 #value from 0 to len(test_samples), to choose the example in place
-random_face_pixels = testX_faces[selection]
-random_face_emb = testX[selection]
-random_face_class = testy[selection]
-random_face_name = out_encoder.inverse_transform([random_face_class])
+#selection = 7 #value from 0 to len(test_samples), to choose the example in place
+for selection in range(0,len(testX_faces)):
+	random_face_pixels = testX_faces[selection]
+	random_face_emb = testX[selection]
+	random_face_class = testy[selection]
+	random_face_name = out_encoder.inverse_transform([random_face_class])
 
-#the code works but i have to fix it due to the fact that the new face detection is confusing the old counting algo
-# #debugging
-#Com a imagem aleatória selecionada, realizar teste de validaçao minima
-#
-# #debugging
-# dist = 100 #initialize distance
-# for employee in trainX:
-#     dist_candidate = np.linalg.norm(random_face_emb-employee)#Calculate L2 distance between the two
-#     print(dist_candidate)
-#     if dist_candidate < dist:
-#         print(dist,dist_candidate<dist)
-#         dist = dist_candidate
-# if dist > 10:
-#     access = "Failed Recognition"
-# else:
-#    access = "successful minimum requirement met"#run SVM
-# # debugging/
+	access, certainty1, certainty2, index = face_recognition(random_face_emb, trainX)
+	if access == "Failed Recognition":
+		print(access, certainty1, certainty2)
 
-access, certainty, index = face_recognition(random_face_emb, trainX)
-if access == "Failed Recognition":
-	print(access, certainty)
 
-elif access == "successful minimum requirement met":
-	print(access, certainty, index)
-	# #plt.imshow(trainX_faces[index+1,:]) #plt para ver a face mais parecida que o algo achou
-	# # prediction for the face
-	# samples = expand_dims(random_face_emb, axis=0)
-	# yhat_class = model.predict(samples)
-	# yhat_prob = model.predict_proba(samples)
-	# # get name
-	# class_index = yhat_class[0]
-	# class_probability = yhat_prob[0,class_index] * 100
-	# predict_names = out_encoder.inverse_transform(yhat_class)
-	# print('Predicted: %s (%.3f)' % (predict_names[0], class_probability))
-	# print('Expected: %s' % random_face_name[0])
-	# #plot for fun
-	# pyplot.imshow(random_face_pixels)
-	# title = '%s (%.3f)' % (predict_names[0], class_probability)
-	# pyplot.title(title)
-	# pyplot.show()
-	# %% Plot image being tested
+	elif access == "successful minimum requirement met":
+		print(access, certainty1, certainty2, index)
+
 	pyplot.imshow(random_face_pixels)
-
-	# %% Plot image found to be the closest and its class
+	# Plot image found to be the closest and its class
 	chosen_face_class = trainy[index]
 	chosen_face_name = out_encoder.inverse_transform([chosen_face_class])
-	plt.imshow(trainX_faces[index,:])
-	certainty = (1/(np.power(2,certainty)))*100
+	print(random_face_name==chosen_face_name)
+	#plt.imshow(trainX_faces[index,:])
+	print(chosen_face_name)
+	certainty = (1/(np.power(2,certainty2)))*100
 	title = 'É : %s, Probabilidade: (%.3f)' % (chosen_face_name, certainty)
 	pyplot.title(title)
 	pyplot.show()
