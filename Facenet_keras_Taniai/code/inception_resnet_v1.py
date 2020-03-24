@@ -36,6 +36,8 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import cv2
 import os
+import timeit
+import time
 sys.path.append("C:/Users/Matt/Documents/GitHub/DeepFaceRecThesis/Facenet_keras_Taniai/code/")
 sys.path.append("C:/Users/Matt/Documents/GitHub/DeepFaceRecThesis/Facenet_keras_Taniai/model/")
 sys.path.append("C:/Users/Matt/Documents/GitHub/DeepFaceRecThesis/Facenet_keras_Taniai/weights/")
@@ -61,6 +63,8 @@ from sklearn.preprocessing import Normalizer
 from sklearn.svm import SVC
 import sklearn
 from random import choice
+
+detector = MTCNN()
 # %% Standard imported functions
 def scaling(x, scale):
 	return x * scale
@@ -97,7 +101,6 @@ def _generate_layer_name(name, branch_idx=None, prefix=None):
 	if branch_idx is None:
 		return '_'.join((prefix, name))
 	return '_'.join((prefix, 'Branch', str(branch_idx), name))
-
 
 def _inception_resnet_block(x, scale, block_type, block_idx, activation='relu'):
 	channel_axis = 1 if K.image_data_format() == 'channels_first' else 3
@@ -254,23 +257,19 @@ def InceptionResNetV1(input_shape=(160, 160, 3), classes=128, dropout_keep_prob=
 
 	return model
 
-# %% M: Function definition
-# extract a single face from a given photograph
+path1 = "C:/Users/Matt/Documents/GitHub/DeepFaceRecThesis/"
 #@jit(nogil=True,parallel=True)
 def extract_face(filename, required_size=(160, 160)):
 	# load image from file
-	#image = PIL.Image.open(filename)
 	image = cv2.cvtColor(cv2.imread(filename),cv2.COLOR_BGR2RGB)
-	# convert to RGB, if needed
-	#image = image.convert('RGB')
 	# convert to array
 	pixels = np.asarray(image)
-	# create the detector, using default weights
-	detector = MTCNN()
+	#start = time.time() # time measurement when necessary for optimization
 	# detect faces in the image
-	results = detector.detect_faces(image)
-	# extract the bounding box from the first face
-	#x = np.array(range(0,len([1,2,3,4,5])))
+	results = detector.detect_faces(image) #Detector has been created as a global class
+	#total = time.time()-start
+	#print(total)
+	#extract the bounding box from the first face
 	x = np.array(range(0,len(results)))
 	y = np.array(range(0,len(results)))
 	x2 = np.array(range(0,len(results)))
@@ -281,7 +280,7 @@ def extract_face(filename, required_size=(160, 160)):
 	face_array = list(np.array(range(0,len(results))))
 	for face in range(0,len(results)):
 		x[face], y[face], width[face], height[face] = results[face]['box']
-		# bug fix
+		# bug fix - shouldn't be necessary in latet version of MTCNN but I'll keep it just in case
 		x[face], y[face] = abs(x[face]), abs(y[face])
 		x2[face], y2[face] = x[face] + width[face], y[face] + height[face]
 		# extract the face
@@ -291,34 +290,8 @@ def extract_face(filename, required_size=(160, 160)):
 		image = image.resize(required_size)
 		face_array[face] = np.asarray(image)
 	return face_array
-# @jit(nogil=True,parallel=True)
-# def extract_face(filename, required_size=(160, 160)):
-# 	# load image from file
-# 	image = PIL.Image.open(filename)
-# 	# convert to RGB, if needed
-# 	image = image.convert('RGB')
-# 	# convert to array
-# 	pixels = np.asarray(image)
-# 	# create the detector, using default weights
-# 	detector = mtcnn.MTCNN()
-# 	# detect faces in the image
-# 	results = detector.detect_faces(pixels)
-# 	# extract the bounding box from the first face
-# 	x1, y1, width, height = results[0]['box']
-# 	# bug fix
-# 	x1, y1 = abs(x1), abs(y1)
-# 	x2, y2 = x1 + width, y1 + height
-# 	# extract the face
-# 	face = pixels[y1:y2, x1:x2]
-# 	# resize pixels to the model size
-# 	image = PIL.Image.fromarray(face)
-# 	image = image.resize(required_size)
-# 	face_array = np.asarray(image)
-#
-# 	return face_array
 
 # load images and extract faces for all images in a directory
-#@jit(nogil=True,parallel=True)
 def load_faces(directory):
 	faces = list()
 	# enumerate files
@@ -332,10 +305,9 @@ def load_faces(directory):
 			faces.append(cara)
 	return faces
 
-#@jit(nogil=True,parallel=True)
 def load_dataset(directory):
 	X, y = list(), list()
-	# enumerate folders, on per class
+	# enumerate folders, on per class, every subdir found becomes a class
 	for subdir in os.listdir(directory):
 		# path
 		path = directory + subdir + '/'
@@ -353,8 +325,7 @@ def load_dataset(directory):
 		y.extend(labels)
 	return np.asarray(X), np.asarray(y)
 
-# get the face embedding for one face
-#@jit(nogil=True,parallel=True)
+# get the face embedding for one face 
 def get_embedding(model, face_pixels): #Runs the CNN on the images
 	# scale pixel values
 	face_pixels = face_pixels.astype('float32')
@@ -368,7 +339,6 @@ def get_embedding(model, face_pixels): #Runs the CNN on the images
 	return yhat[0]
 
 #testing if the person requesting access is in the database
-#@jit(nogil=True,parallel = True)
 def face_recognition(image_embedding, database):
 	dist = 100 #initialize distance
 	for employee in database:
@@ -383,12 +353,7 @@ def face_recognition(image_embedding, database):
 
 	return access, dist
 
-#%% debugging
-path1 = "C:/Users/Matt/Documents/GitHub/DeepFaceRecThesis/"
-
-Xtest, Ytest = load_dataset(path1+"Facenet_keras_Taniai/data/Single_test_image/")
-
-# %%
+#Xtest, Ytest = load_dataset(path1+"Facenet_keras_Taniai/data/Single_test_image/")#''', number = 10))
 
 # %% Code Execution: Loading the model
 # #Matt: Parts of the code are from https://machinelearningmastery.com/
