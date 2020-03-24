@@ -38,10 +38,10 @@ import cv2
 import os
 import timeit
 import time
-sys.path.append("C:/Users/Shadow/Documents/GitHub/DeepFaceRecThesis/Facenet_keras_Taniai/code/")
-sys.path.append("C:/Users/Shadow/Documents/GitHub/DeepFaceRecThesis/Facenet_keras_Taniai/model/")
-sys.path.append("C:/Users/Shadow/Documents/GitHub/DeepFaceRecThesis/Facenet_keras_Taniai/weights/")
-sys.path.append("C:/Users/Shadow/Documents/GitHub/DeepFaceRecThesis/Facenet_keras_Taniai/")
+sys.path.append("C:/Users/Matt/Documents/GitHub/DeepFaceRecThesis/Facenet_keras_Taniai/code/")
+sys.path.append("C:/Users/Matt/Documents/GitHub/DeepFaceRecThesis/Facenet_keras_Taniai/model/")
+sys.path.append("C:/Users/Matt/Documents/GitHub/DeepFaceRecThesis/Facenet_keras_Taniai/weights/")
+sys.path.append("C:/Users/Matt/Documents/GitHub/DeepFaceRecThesis/Facenet_keras_Taniai/")
 
 import mtcnn
 from mtcnn import MTCNN
@@ -101,7 +101,6 @@ def _generate_layer_name(name, branch_idx=None, prefix=None):
 	if branch_idx is None:
 		return '_'.join((prefix, name))
 	return '_'.join((prefix, 'Branch', str(branch_idx), name))
-
 
 def _inception_resnet_block(x, scale, block_type, block_idx, activation='relu'):
 	channel_axis = 1 if K.image_data_format() == 'channels_first' else 3
@@ -258,79 +257,19 @@ def InceptionResNetV1(input_shape=(160, 160, 3), classes=128, dropout_keep_prob=
 
 	return model
 
-# %% M: Function definition
-# extract a single face from a given photograph
-#print(timeit.timeit('''
-# from functools import partial
-#
-# from keras.models import Model
-# from keras.models import load_model #M
-# from keras.layers import Activation
-# from keras.layers import BatchNormalization
-# from keras.layers import Concatenate
-# from keras.layers import Conv2D
-# from keras.layers import Dense
-# from keras.layers import Dropout
-# from keras.layers import GlobalAveragePooling2D
-# from keras.layers import Input
-# from keras.layers import Lambda
-# from keras.layers import MaxPooling2D
-# from keras.layers import add
-# from keras import backend as K
-#
-# import sys
-# import numpy as np
-# from numpy import genfromtxt
-# import tensorflow as tf
-# import matplotlib.pyplot as plt
-# import pandas as pd
-# import cv2
-# import os
-# import timeit
-# sys.path.append("C:/Users/Shadow/Documents/GitHub/DeepFaceRecThesis/Facenet_keras_Taniai/code/")
-# sys.path.append("C:/Users/Shadow/Documents/GitHub/DeepFaceRecThesis/Facenet_keras_Taniai/model/")
-# sys.path.append("C:/Users/Shadow/Documents/GitHub/DeepFaceRecThesis/Facenet_keras_Taniai/weights/")
-# sys.path.append("C:/Users/Shadow/Documents/GitHub/DeepFaceRecThesis/Facenet_keras_Taniai/")
-#
-# import mtcnn
-# from mtcnn import MTCNN
-# import PIL
-# from os import listdir
-# from os.path import isdir
-# from PIL import Image
-# from matplotlib import pyplot
-# from numpy import savez_compressed
-# from numpy import asarray
-# from numpy import load
-# from numpy import expand_dims
-# import numba
-# from numba import njit, jit
-#
-# from sklearn.metrics import accuracy_score
-# from sklearn.preprocessing import LabelEncoder
-# from sklearn.preprocessing import Normalizer
-# from sklearn.svm import SVC
-# import sklearn
-# from random import choice
-
-path1 = "C:/Users/Shadow/Documents/GitHub/DeepFaceRecThesis/"
+path1 = "C:/Users/Matt/Documents/GitHub/DeepFaceRecThesis/"
 #@jit(nogil=True,parallel=True)
 def extract_face(filename, required_size=(160, 160)):
 	# load image from file
-	#image = PIL.Image.open(filename)
 	image = cv2.cvtColor(cv2.imread(filename),cv2.COLOR_BGR2RGB)
-	# convert to RGB, if needed
 	# convert to array
 	pixels = np.asarray(image)
-	# create the detector, using default weights
-	# detector = MTCNN()
+	#start = time.time() # time measurement when necessary for optimization
 	# detect faces in the image
-	start = time.time()
-	results = detector.detect_faces(image)
-	total = time.time()-start
-	print(total)
-	# extract the bounding box from the first face
-	#x = np.array(range(0,len([1,2,3,4,5])))
+	results = detector.detect_faces(image) #Detector has been created as a global class
+	#total = time.time()-start
+	#print(total)
+	#extract the bounding box from the first face
 	x = np.array(range(0,len(results)))
 	y = np.array(range(0,len(results)))
 	x2 = np.array(range(0,len(results)))
@@ -341,7 +280,7 @@ def extract_face(filename, required_size=(160, 160)):
 	face_array = list(np.array(range(0,len(results))))
 	for face in range(0,len(results)):
 		x[face], y[face], width[face], height[face] = results[face]['box']
-		# bug fix
+		# bug fix - shouldn't be necessary in latet version of MTCNN but I'll keep it just in case
 		x[face], y[face] = abs(x[face]), abs(y[face])
 		x2[face], y2[face] = x[face] + width[face], y[face] + height[face]
 		# extract the face
@@ -368,7 +307,7 @@ def load_faces(directory):
 
 def load_dataset(directory):
 	X, y = list(), list()
-	# enumerate folders, on per class
+	# enumerate folders, on per class, every subdir found becomes a class
 	for subdir in os.listdir(directory):
 		# path
 		path = directory + subdir + '/'
@@ -386,7 +325,7 @@ def load_dataset(directory):
 		y.extend(labels)
 	return np.asarray(X), np.asarray(y)
 
-# get the face embedding for one face
+# get the face embedding for one face 
 def get_embedding(model, face_pixels): #Runs the CNN on the images
 	# scale pixel values
 	face_pixels = face_pixels.astype('float32')

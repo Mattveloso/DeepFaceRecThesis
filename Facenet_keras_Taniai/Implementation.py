@@ -24,10 +24,10 @@ import pandas as pd
 import cv2
 import os
 import timeit
-sys.path.append("C:/Users/Shadow/Documents/GitHub/DeepFaceRecThesis/Facenet_keras_Taniai/code/")
-sys.path.append("C:/Users/Shadow/Documents/GitHub/DeepFaceRecThesis/Facenet_keras_Taniai/model/")
-sys.path.append("C:/Users/Shadow/Documents/GitHub/DeepFaceRecThesis/Facenet_keras_Taniai/weights/")
-sys.path.append("C:/Users/Shadow/Documents/GitHub/DeepFaceRecThesis/Facenet_keras_Taniai/")
+sys.path.append("C:/Users/Matt/Documents/GitHub/DeepFaceRecThesis/Facenet_keras_Taniai/code/")
+sys.path.append("C:/Users/Matt/Documents/GitHub/DeepFaceRecThesis/Facenet_keras_Taniai/model/")
+sys.path.append("C:/Users/Matt/Documents/GitHub/DeepFaceRecThesis/Facenet_keras_Taniai/weights/")
+sys.path.append("C:/Users/Matt/Documents/GitHub/DeepFaceRecThesis/Facenet_keras_Taniai/")
 
 import mtcnn
 from mtcnn import MTCNN
@@ -57,39 +57,38 @@ from inception_resnet_v1 import _inception_resnet_block
 from inception_resnet_v1 import extract_face
 from inception_resnet_v1 import load_dataset
 from inception_resnet_v1 import get_embedding
-#from inception_resnet_v1 import face_recognition
+#from inception_resnet_v1 import face_recognition #directly written on this file
 
-path1 = "C:/Users/Shadow/Documents/GitHub/DeepFaceRecThesis/"
+path1 = "C:/Users/Matt/Documents/GitHub/DeepFaceRecThesis/"
 
 # %% load the facenet model
 model = load_model(path1+'Facenet_keras_Taniai/model/facenet_keras.h5')
 print('Modelo Carregado')
 
 #known bugs:
-#None, however the execution is too slow
+#Execution of testing is not automated
 
-# # %% Load train Images - M: Slowest part of the code, improve
+# %% Load train Images - M: Slowest part of the code, improve
 x,y = load_dataset(path1+"Facenet_keras_Taniai/data/images/")
-#x,y = load_dataset(path1+"Facenet_keras_Taniai/data/Single_train_image/")
+#x,y = load_dataset(path1+"Facenet_keras_Taniai/data/Single_train_image/") #Option for using single image testing
 
 # %% Load Test images
 Xtest, Ytest = load_dataset(path1+"Facenet_keras_Taniai/data/Test/")
-#Xtest, Ytest = load_dataset(path1+"Facenet_keras_Taniai/data/Single_test_image/")
+#Xtest, Ytest = load_dataset(path1+"Facenet_keras_Taniai/data/Single_test_image/") #Option for using single image testing
 
 # %% savez_compressed
 savez_compressed('my_dataset.npz', x, y)
-#savez_compressed('One_train_example.npz', x, y)
+#savez_compressed('One_train_example.npz', x, y) #Option for using single image testing
 savez_compressed('test_data.npz', Xtest, Ytest)
-#savez_compressed('One_example.npz', Xtest, Ytest)
+#savez_compressed('One_example.npz', Xtest, Ytest) #Option for using single image testing
 
 # %% Loading and executing
 # load the face dataset - for when the npz file is already created previously
 data = load('my_dataset.npz')
-#data = load('One_train_example.npz')
-#trainX, trainy, testX, testy = data['arr_0'], data['arr_1'], data['arr_2'], data['arr_3']
+#data = load('One_train_example.npz') #Option for using single image testing
 trainX, trainy = data['arr_0'], data['arr_1']
 data2= load('test_data.npz')
-#data2 = load('One_example.npz')
+#data2 = load('One_example.npz') #Option for using single image testing
 testX, testy = data2['arr_0'], data2['arr_1']
 print('Carregado: ', trainX.shape, trainy.shape, testX.shape, testy.shape)
 
@@ -184,7 +183,7 @@ out_encoder.fit(testy)
 testy = out_encoder.transform(testy)
 trainy = out_encoder.transform(trainy)
 #%%
-# fit model - ignored for now
+# fit model - used when applying svm
 #model = SVC(kernel='linear', probability=True)
 #model.fit(trainX, trainy)
 
@@ -238,7 +237,6 @@ elif access == "successful minimum requirement met":
 	# title = '%s (%.3f)' % (predict_names[0], class_probability)
 	# pyplot.title(title)
 	# pyplot.show()
-
 	# %% Plot image being tested
 	pyplot.imshow(random_face_pixels)
 
