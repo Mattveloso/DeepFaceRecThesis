@@ -38,10 +38,10 @@ import cv2
 import os
 import timeit
 import time
-sys.path.append("C:/Users/Matt/Documents/GitHub/DeepFaceRecThesis/Facenet_keras_Taniai/code/")
-sys.path.append("C:/Users/Matt/Documents/GitHub/DeepFaceRecThesis/Facenet_keras_Taniai/model/")
-sys.path.append("C:/Users/Matt/Documents/GitHub/DeepFaceRecThesis/Facenet_keras_Taniai/weights/")
-sys.path.append("C:/Users/Matt/Documents/GitHub/DeepFaceRecThesis/Facenet_keras_Taniai/")
+sys.path.append("C:/Users/Shadow/Documents/GitHub/DeepFaceRecThesis/Facenet_keras_Taniai/code/")
+sys.path.append("C:/Users/Shadow/Documents/GitHub/DeepFaceRecThesis/Facenet_keras_Taniai/model/")
+sys.path.append("C:/Users/Shadow/Documents/GitHub/DeepFaceRecThesis/Facenet_keras_Taniai/weights/")
+sys.path.append("C:/Users/Shadow/Documents/GitHub/DeepFaceRecThesis/Facenet_keras_Taniai/")
 
 import mtcnn
 from mtcnn import MTCNN
@@ -257,7 +257,7 @@ def InceptionResNetV1(input_shape=(160, 160, 3), classes=128, dropout_keep_prob=
 
 	return model
 
-path1 = "C:/Users/Matt/Documents/GitHub/DeepFaceRecThesis/"
+path1 = "C:/Users/Shadow/Documents/GitHub/DeepFaceRecThesis/"
 #@jit(nogil=True,parallel=True)
 def extract_face(filename, required_size=(160, 160)):
 	# load image from file
@@ -325,7 +325,7 @@ def load_dataset(directory):
 		y.extend(labels)
 	return np.asarray(X), np.asarray(y)
 
-# get the face embedding for one face 
+# get the face embedding for one face
 def get_embedding(model, face_pixels): #Runs the CNN on the images
 	# scale pixel values
 	face_pixels = face_pixels.astype('float32')
