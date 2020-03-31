@@ -22,9 +22,9 @@ while 1:
 	finally:
 		click = driver.find_element_by_xpath('//*[@id="roulette-root"]/div/div[1]/div[4]/div[2]/div[2]/div/div/div[2]/div/div[2]')
 		click.click()
-		time.sleep(5)
+		time.sleep(4)
 		driver.refresh()
-		time.sleep(5)
+		time.sleep(1)
 #%%
 
 dinovo = driver.find_element_by_xpath('//*[@id="roulette-root"]/div/div[3]/div/div/div[1]/div[2]/button')
