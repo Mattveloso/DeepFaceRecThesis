@@ -7,6 +7,9 @@ from PIL import Image
 import time
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.by import By
+import random
+from selenium.webdriver.common.action_chains import ActionChains
+imgdir = "C:/Users/Shadow/Documents/GitHub/DeepFaceRecThesis/bbb/"
 
 # %%
 driver = webdriver.Chrome(ChromeDriverManager().install())
@@ -20,8 +23,17 @@ while 1:
 			EC.presence_of_element_located((By.XPATH, '//*[@id="roulette-root"]/div/div[1]/div[4]/div[2]/div[2]/div/div/div[2]/div/div[2]'))
 		)
 	finally:
+		selecao = driver.find_element_by_xpath('//*[@id="roulette-root"]/div/div[1]/div[4]/div[2]/div[2]/div/div/div[2]/div/div[2]/img')
+		selecao.screenshot(imgdir+"recogimages.png")
+		img = Image.open(imgdir+'recogimages.png')
+		width, height = img.size
+		xoffset=random.choice([int(width/5),int(width*2/5),int(width*3/5),int(width*4/5),int(width-1)])
 		click = driver.find_element_by_xpath('//*[@id="roulette-root"]/div/div[1]/div[4]/div[2]/div[2]/div/div/div[2]/div/div[2]')
-		click.click()
+		actions = ActionChains(driver)
+		actions.move_to_element_with_offset(click, xoffset, yoffset=25)
+		actions.click(on_element=click)
+		actions.perform()
+		#click.click()
 		time.sleep(4)
 		driver.refresh()
 		time.sleep(1)
