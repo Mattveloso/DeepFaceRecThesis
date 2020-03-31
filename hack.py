@@ -33,8 +33,11 @@ while 1:
 		actions.move_to_element_with_offset(click, xoffset, yoffset=25)
 		actions.click(on_element=click)
 		actions.perform()
-		#click.click()
 		time.sleep(4)
+		if(EC.presence_of_element_located((By.XPATH, '//*[@id="roulette-root"]/div/div[1]/div[4]/div[2]/div[2]/div/div/div[2]/div/div[2]'))):
+			click = driver.find_element_by_xpath('//*[@id="roulette-root"]/div/div[1]/div[4]/div[2]/div[2]/div/div/div[2]/div/div[2]')
+			click.click()
+			time.sleep(4)
 		driver.refresh()
 		time.sleep(1)
 #%%
