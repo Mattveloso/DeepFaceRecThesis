@@ -24,10 +24,10 @@ import pandas as pd
 import cv2
 import os
 import timeit
-sys.path.append("C:/Users/Matt/Documents/GitHub/DeepFaceRecThesis/Facenet_keras_Taniai/code/")
-sys.path.append("C:/Users/Matt/Documents/GitHub/DeepFaceRecThesis/Facenet_keras_Taniai/model/")
-sys.path.append("C:/Users/Matt/Documents/GitHub/DeepFaceRecThesis/Facenet_keras_Taniai/weights/")
-sys.path.append("C:/Users/Matt/Documents/GitHub/DeepFaceRecThesis/Facenet_keras_Taniai/")
+sys.path.append("C:/Users/Shadow/Documents/GitHub/DeepFaceRecThesis/Facenet_keras_Taniai/code/")
+sys.path.append("C:/Users/Shadow/Documents/GitHub/DeepFaceRecThesis/Facenet_keras_Taniai/model/")
+sys.path.append("C:/Users/Shadow/Documents/GitHub/DeepFaceRecThesis/Facenet_keras_Taniai/weights/")
+sys.path.append("C:/Users/Shadow/Documents/GitHub/DeepFaceRecThesis/Facenet_keras_Taniai/")
 
 import mtcnn
 from mtcnn import MTCNN
@@ -59,7 +59,7 @@ from inception_resnet_v1 import load_dataset
 from inception_resnet_v1 import get_embedding
 #from inception_resnet_v1 import face_recognition #directly written on this file
 
-path1 = "C:/Users/Matt/Documents/GitHub/DeepFaceRecThesis/"
+path1 = "C:/Users/Shadow/Documents/GitHub/DeepFaceRecThesis/"
 
 # %% load the facenet model
 model = load_model(path1+'Facenet_keras_Taniai/model/facenet_keras.h5')
