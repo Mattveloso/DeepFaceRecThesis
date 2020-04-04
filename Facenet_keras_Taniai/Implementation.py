@@ -24,6 +24,7 @@ import pandas as pd
 import cv2
 import os
 import timeit
+import time
 sys.path.append("C:/Users/Shadow/Documents/GitHub/DeepFaceRecThesis/Facenet_keras_Taniai/code/")
 sys.path.append("C:/Users/Shadow/Documents/GitHub/DeepFaceRecThesis/Facenet_keras_Taniai/model/")
 sys.path.append("C:/Users/Shadow/Documents/GitHub/DeepFaceRecThesis/Facenet_keras_Taniai/weights/")
@@ -70,28 +71,30 @@ print('Modelo Carregado')
 #The code should have a double verification to avoid false positives and avoid raising the threshhold
 
 # %% Load train Images - M: Slowest part of the code, improve
+
+start = time.time() # Timing execution
 x,y = load_dataset(path1+"Facenet_keras_Taniai/data/images/")
 #x,y = load_dataset(path1+"Facenet_keras_Taniai/data/Single_train_image/") #Option for using single image testing
 
-# %% Load Test images
-Xtest, Ytest = load_dataset(path1+"Facenet_keras_Taniai/data/Test/")
+# Load Test images
+#Xtest, Ytest = load_dataset(path1+"Facenet_keras_Taniai/data/Test/")
 #Xtest, Ytest = load_dataset(path1+"Facenet_keras_Taniai/data/Single_test_image/") #Option for using single image testing
 
-# %% savez_compressed
+#  savez_compressed
 savez_compressed('my_dataset.npz', x, y)
 #savez_compressed('One_train_example.npz', x, y) #Option for using single image testing
-savez_compressed('test_data.npz', Xtest, Ytest)
+#savez_compressed('test_data.npz', Xtest, Ytest)
 #savez_compressed('One_example.npz', Xtest, Ytest) #Option for using single image testing
 
-# %% Loading and executing
+# Loading and executing
 # load the face dataset - for when the npz file is already created previously
 data = load('my_dataset.npz')
 #data = load('One_train_example.npz') #Option for using single image testing
 trainX, trainy = data['arr_0'], data['arr_1']
-data2= load('test_data.npz')
+#data2= load('test_data.npz')
 #data2 = load('One_example.npz') #Option for using single image testing
-testX, testy = data2['arr_0'], data2['arr_1']
-print('Carregado: ', trainX.shape, trainy.shape, testX.shape, testy.shape)
+#testX, testy = data2['arr_0'], data2['arr_1']
+print('Carregado: ', trainX.shape, trainy.shape)#, testX.shape, testy.shape)
 
 # convert each face in the train set to an embedding
 newTrainX = list()
@@ -99,18 +102,22 @@ for face_pixels in trainX:
 	embedding = get_embedding(model, face_pixels)
 	newTrainX.append(embedding)
 newTrainX = asarray(newTrainX)
+print(newTrainX.shape)
 
 # convert each face in the test set to an embedding
-newTestX = list()
-for face_pixels in testX:
-	embedding = get_embedding(model, face_pixels)
-	newTestX.append(embedding)
-newTestX = asarray(newTestX)
-print(newTestX.shape)
+# newTestX = list()
+# for face_pixels in testX:
+# 	embedding = get_embedding(model, face_pixels)
+# 	newTestX.append(embedding)
+# newTestX = asarray(newTestX)
+#print(newTestX.shape)
 
 # save arrays to one file in compressed format
-savez_compressed('my_embeddings2.npz', newTrainX, trainy, newTestX, testy)
+savez_compressed('my_embeddings2.npz', newTrainX, trainy)#, newTestX, testy)
 #savez_compressed('my_embeddings3.npz', newTrainX, trainy, newTestX, testy)
+end = time.time()
+print(end - start)
+
 # %%
 #@jit(nogil=True,parallel = True)
 def face_recognition(image_embedding, database):
