@@ -117,24 +117,20 @@ def face_recognition(image_embedding, database):
 	dist = 100 #initialize distance
 	dist2 = 100
 	index = -1
+	index2 = -2
 	for indice in range(database.shape[0]):
 		dist_candidate = np.linalg.norm(image_embedding-database[indice,:])#Calculate L2 distance between the two
 
 		if dist_candidate < dist2:
 			dist2 = dist_candidate
+			index2 = indice
 			if dist2 < dist:
-				a = dist #temporary variable to switch values
-				dist = dist2
-				dist2 = a
+				dist2 = dist
+				dist = dist_candidate
+				index2 = index
 				index = indice
 
-	if dist > 1:
-		access = "Failed Recognition"
-	elif dist2 > 1:
-		access = "Failed Recognition"
-	else:
-		access = "successful minimum requirement met"#run SVM
-	return access, dist, dist2, index
+	return dist, dist2, index, index2
 
 # %% Teste aleatório
 # load faces
@@ -167,22 +163,35 @@ for selection in range(0,len(testX_faces)):
 	random_face_class = testy[selection]
 	random_face_name = out_encoder.inverse_transform([random_face_class])
 
-	access, certainty1, certainty2, index = face_recognition(random_face_emb, trainX)
-	if access == "Failed Recognition":
-		print(access, certainty1, certainty2)
+	dist, dist2, index, index2 = face_recognition(random_face_emb, trainX)
 
+	if dist > 1:
+		raccess = "Não Reconhecido"
+	elif dist2 > 1:
+		access = "Não Reconhecido"
+	elif trainy[index]!=trainy[index2]:
+		access = "Não Reconhecido"
+		chosen_face_name = "Unsure"
+	else:
+		access = "Reconhecido"#run SVM
+		chosen_face_class = trainy[index2]
+		chosen_face_name = out_encoder.inverse_transform([chosen_face_class])
 
-	elif access == "successful minimum requirement met":
-		print(access, certainty1, certainty2, index)
+	if access == "Não Reconhecido":
+		print(access, dist, dist2)
 
-	pyplot.imshow(random_face_pixels)
+	elif access == "Reconhecido":
+		print(access, dist, dist2)
+
+	if chosen_face_name == ["Matt"]:
+		pyplot.imshow(trainX_faces[index,:])
+		print(random_face_emb)
+	else:
+		pyplot.imshow(random_face_pixels)
 	# Plot image found to be the closest and its class
-	chosen_face_class = trainy[index]
-	chosen_face_name = out_encoder.inverse_transform([chosen_face_class])
 	print(random_face_name==chosen_face_name)
 	#plt.imshow(trainX_faces[index,:])
-	print(chosen_face_name)
-	certainty = (1/(np.power(2,certainty2)))*100
-	title = 'É : %s, Probabilidade: (%.3f)' % (chosen_face_name, certainty)
+	certainty = (1/(np.power(2,dist2)))*100
+	title = 'É : %s, Score: (%.3f)' % (chosen_face_name, certainty)
 	pyplot.title(title)
 	pyplot.show()
