@@ -50,6 +50,7 @@ import sklearn
 from random import choice
 
 #Import necessary created functions from inception_resnet_v1.py
+from inception_resnet_v1 import InceptionResNetV1
 from inception_resnet_v1 import scaling
 from inception_resnet_v1 import conv2d_bn
 from inception_resnet_v1 import _generate_layer_name
@@ -62,7 +63,8 @@ from inception_resnet_v1 import get_embedding
 path1 = "C:/Users/Shadow/Documents/GitHub/DeepFaceRecThesis/"
 
 # %% load the facenet model
-model = load_model(path1+'Facenet_keras_Taniai/model/facenet_keras.h5')
+#model = load_model(path1+'Facenet_keras_Taniai/model/facenet_keras.h5')
+model = InceptionResNetV1((160, 160, 3), classes=128, dropout_keep_prob=0.8, weights_path=path1+'Facenet_keras_Taniai/model/facenet_keras.h5')
 print('Modelo Carregado')
 
 #known bugs:
@@ -73,8 +75,9 @@ print('Modelo Carregado')
 x,y = load_dataset(path1+"Facenet_keras_Taniai/data/images/")
 #x,y = load_dataset(path1+"Facenet_keras_Taniai/data/Single_train_image/") #Option for using single image testing
 
-# %% Load Test images
+# %% Load Test images (choose between StanderdTest and Test)
 Xtest, Ytest = load_dataset(path1+"Facenet_keras_Taniai/data/Test/")
+#Xtest, Ytest = load_dataset(path1+"Facenet_keras_Taniai/data/StandardTest/")
 #Xtest, Ytest = load_dataset(path1+"Facenet_keras_Taniai/data/Single_test_image/") #Option for using single image testing
 
 # %% savez_compressed
@@ -165,33 +168,27 @@ for selection in range(0,len(testX_faces)):
 
 	dist, dist2, index, index2 = face_recognition(random_face_emb, trainX)
 
-	if dist > 1:
-		raccess = "Não Reconhecido"
-	elif dist2 > 1:
+	if dist > 1 or dist2 > 1:
 		access = "Não Reconhecido"
+		chosen_face_class = trainy[index2]
+		chosen_face_name = out_encoder.inverse_transform([chosen_face_class])
+
 	elif trainy[index]!=trainy[index2]:
 		access = "Não Reconhecido"
 		chosen_face_name = "Unsure"
 	else:
-		access = "Reconhecido"#run SVM
+		access = "Reconhecido"
 		chosen_face_class = trainy[index2]
 		chosen_face_name = out_encoder.inverse_transform([chosen_face_class])
 
-	if access == "Não Reconhecido":
-		print(access, dist, dist2)
-
-	elif access == "Reconhecido":
-		print(access, dist, dist2)
-
-	if chosen_face_name == ["Matt"]:
-		pyplot.imshow(trainX_faces[index,:])
-		print(random_face_emb)
-	else:
-		pyplot.imshow(random_face_pixels)
+	print(access, dist, dist2)
 	# Plot image found to be the closest and its class
 	print(random_face_name==chosen_face_name)
 	#plt.imshow(trainX_faces[index,:])
+	plt.imshow(random_face_pixels)
 	certainty = (1/(np.power(2,dist2)))*100
 	title = 'É : %s, Score: (%.3f)' % (chosen_face_name, certainty)
 	pyplot.title(title)
 	pyplot.show()
+ # %%
+ model.summary()
