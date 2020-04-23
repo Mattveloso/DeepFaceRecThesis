@@ -76,8 +76,8 @@ x,y = load_dataset(path1+"Facenet_keras_Taniai/data/images/")
 #x,y = load_dataset(path1+"Facenet_keras_Taniai/data/Single_train_image/") #Option for using single image testing
 
 # %% Load Test images (choose between StanderdTest and Test)
-Xtest, Ytest = load_dataset(path1+"Facenet_keras_Taniai/data/Test/")
-#Xtest, Ytest = load_dataset(path1+"Facenet_keras_Taniai/data/StandardTest/")
+#Xtest, Ytest = load_dataset(path1+"Facenet_keras_Taniai/data/Test/")
+Xtest, Ytest = load_dataset(path1+"Facenet_keras_Taniai/data/StandardTest/")
 #Xtest, Ytest = load_dataset(path1+"Facenet_keras_Taniai/data/Single_test_image/") #Option for using single image testing
 
 # %% savez_compressed
@@ -119,21 +119,28 @@ savez_compressed('my_embeddings2.npz', newTrainX, trainy, newTestX, testy)
 def face_recognition(image_embedding, database):
 	dist = 100 #initialize distance
 	dist2 = 100
+	dist3 = 100
 	index = -1
 	index2 = -2
+	index3 = -3
 	for indice in range(database.shape[0]):
 		dist_candidate = np.linalg.norm(image_embedding-database[indice,:])#Calculate L2 distance between the two
 
-		if dist_candidate < dist2:
-			dist2 = dist_candidate
-			index2 = indice
-			if dist2 < dist:
-				dist2 = dist
-				dist = dist_candidate
-				index2 = index
-				index = indice
+		if dist_candidate < dist3:
+			dist3 = dist_candidate
+			index3 = indice
+			if dist3 < dist2:
+				dist3 = dist2
+				dist2 = dist_candidate
+				index3 = index2
+				index2 = indice
+				if dist2 < dist:
+					dist2 = dist
+					dist = dist_candidate
+					index2 = index
+					index = indice
 
-	return dist, dist2, index, index2
+	return dist, dist2, dist3, index, index2, index3
 
 # %% Teste aleatório
 # load faces
@@ -166,29 +173,31 @@ for selection in range(0,len(testX_faces)):
 	random_face_class = testy[selection]
 	random_face_name = out_encoder.inverse_transform([random_face_class])
 
-	dist, dist2, index, index2 = face_recognition(random_face_emb, trainX)
+	dist, dist2, dist3, index, index2, index3 = face_recognition(random_face_emb, trainX)
 
-	if dist > 1 or dist2 > 1:
+	if dist > 1:# or dist2 > 1 or dist3 > 1:
 		access = "Não Reconhecido"
-		chosen_face_class = trainy[index2]
-		chosen_face_name = out_encoder.inverse_transform([chosen_face_class])
-
-	elif trainy[index]!=trainy[index2]:
-		access = "Não Reconhecido"
-		chosen_face_name = "Unsure"
+		chosen_face_class = trainy[index]
+		#chosen_face_name = out_encoder.inverse_transform([chosen_face_class])
+		chosen_face_name = "Negativo"
+	#elif trainy[index]!=trainy[index2] or trainy[index]!=trainy[index3]:
+	#	access = "Não Reconhecido"
+	#	chosen_face_name = "Unsure"
 	else:
 		access = "Reconhecido"
-		chosen_face_class = trainy[index2]
+		chosen_face_class = trainy[index]
 		chosen_face_name = out_encoder.inverse_transform([chosen_face_class])
 
-	print(access, dist, dist2)
+	print(access, dist)#, dist2, dist3)
+	#print(out_encoder.inverse_transform([trainy[index],trainy[index2],trainy[index3]]))
+
 	# Plot image found to be the closest and its class
 	print(random_face_name==chosen_face_name)
 	#plt.imshow(trainX_faces[index,:])
 	plt.imshow(random_face_pixels)
-	certainty = (1/(np.power(2,dist2)))*100
+	certainty = (1/(np.power(2,dist)))*100
 	title = 'É : %s, Score: (%.3f)' % (chosen_face_name, certainty)
 	pyplot.title(title)
 	pyplot.show()
  # %%
- model.summary()
+# model.summary()
